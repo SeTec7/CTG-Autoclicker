@@ -1,0 +1,35 @@
+{
+  "update_url": "https://clients2.google.com/service/update2/crx",
+  "manifest_version": 3,
+  "name": "CTG Autoclicker",
+  "short_name": "CTGA",
+  "author": "Jared Gillis",
+  "description": "A collection of tools to automate web interactions.",
+  "version": "1.0",
+  "icons": {
+    "16": "assets/icon16.png",
+    "128": "assets/icon128.png"
+  },
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  //"options_page": "options.html",
+  "permissions": [
+    "tabs",
+	"activeTab",
+    "storage",
+    "webRequest",
+    "contextMenus",
+	"scripting"
+  ],
+  "host_permissions": [
+	"http://*/*", 
+	"https://*/*"
+  ],
+  "action": {
+    "default_icon": "assets/icon128.png",
+    "default_popup": "popup.html",
+    "default_title": "CTG Autoclicker"
+  },
+  "content_security_policy": {}
+}
