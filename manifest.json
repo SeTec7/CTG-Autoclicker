@@ -4,7 +4,7 @@
   "name": "CTG Autoclicker",
   "short_name": "CTGA",
   "author": "Jared Gillis",
-  "description": "A collection of tools to automate web interactions.",
+  "description": "A smart, robust autoclicker for automating browser games.",
   "version": "1.0",
   "icons": {
     "16": "assets/icon16.png",
@@ -13,14 +13,14 @@
   "background": {
     "service_worker": "service_worker.js"
   },
-  //"options_page": "options.html",
+  "options_page": "options.html",
   "permissions": [
     "tabs",
-	"activeTab",
+	  "activeTab",
     "storage",
     "webRequest",
     "contextMenus",
-	"scripting"
+	  "scripting"
   ],
   "host_permissions": [
 	"http://*/*", 

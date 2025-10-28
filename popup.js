@@ -1,79 +1,43 @@
 /* globals chrome, $ */
 
+var currentTab = {};
+loadCurrentTab();
+chrome.tabs.onUpdated.addListener(onUpdateTab);
+chrome.tabs.onRemoved.addListener(onRemoveTab);
+chrome.tabs.onActivated.addListener(onActivatedTab);
+chrome.windows.onFocusChanged.addListener(onWindowFocus);
+
+function loadCurrentTab() {
+	chrome.tabs.query({ active: true, currentWindow: true }, function(results) {
+		if (results.length > 0) {
+			currentTab = results[0];
+		}
+	});
+}
+
+function onUpdateTab(tabId, changeInfo, tab) {
+	loadCurrentTab()
+}
+
+function onRemoveTab(tabId, removeInfo) {
+	loadCurrentTab();
+}
+
+function onActivatedTab(activeInfo) {
+	loadCurrentTab();
+}
+
+function onWindowFocus(windowId) {
+	loadCurrentTab();
+}
+
 $(document).ready(function() {
-	//var background = chrome.extension.getBackgroundPage().session;
-	//var scripts = chrome.extension.getBackgroundPage().scripts;
 
 	loadDefaults();
 
-	$("#autoScrollStart").click(function() {
-		if ($(this).text() == "Start") {
-			var speed = 10;
-			if (!isNaN($("#autoScrollSpeed").val())) speed = parseFloat($("#autoScrollSpeed").val());
-			else $("#autoScrollSpeed").val(speed);
-			scripts.autoScrollGo(speed);
-			$("#autoScrollStart").text("Stop");
-			background.plugins["autoScroll"].speed = speed;
-			chrome.storage.sync.set({ autoScrollSpeed: speed }, function() {
-				if (chrome.runtime.lastError) return;
-			});
-		} else {
-			scripts.autoScrollStop();
-			$("#autoScrollStart").text("Start");
-		}
-	});
-
-	$("#autoScrollSpeed").change(function(val) {
-		var speed = 10;
-		if (!isNaN($("#autoScrollSpeed").val())) speed = parseFloat($("#autoScrollSpeed").val());
-		background.plugins["autoScroll"].speed = speed;
-		chrome.storage.sync.set({ autoScrollSpeed: speed }, function() {
-			if (chrome.runtime.lastError) return;
-		});
-	});
-
-	$("#focusGo").click(function() {
-		if ($(this).text() == "Select Focus") {
-			chrome.scripting.executeScript(
-				{
-					file: "jquery-3.1.1.min.js"
-				},
-				function() {
-					if (chrome.runtime.lastError) return;
-					chrome.scripting.executeScript(
-						{
-							file: "scripts/domSelector.js"
-						},
-						function() {
-							if (chrome.runtime.lastError) return;
-							chrome.scripting.executeScript(
-								{
-									file: "plugins/focus.js"
-								},
-								function() {
-									if (chrome.runtime.lastError) return;
-									window.close();
-								}
-							);
-						}
-					);
-				}
-			);
-			$("#focusGo").text("Remove Focus");
-		} else {
-			chrome.scripting.executeScript(
-				{
-					code: "removeFocus(); if (domSelector){ domSelector.stop(); }"
-				},
-				function() {
-					if (chrome.runtime.lastError) return;
-				}
-			);
-			$("#focusGo").text("Select Focus");
-		}
-	});
-
 	$("#autoClickStart").click(function() {
+		//var currentTab = await chrome.runtime.sendMessage({ getCurrentTab : true });
+		console.log("Caught autoclicker click ", currentTab);
 		if ($(this).text() == "Select Click Target") {
 			var delay = 10;
 			if (!isNaN(parseFloat($("#autoClickDelay").val()))) {
@@ -83,58 +47,61 @@ $(document).ready(function() {
 					$("#autoClickDelay").val(delay);
 				}
 			} else $("#autoClickDelay").val(delay);
+
 			chrome.scripting.executeScript(
 				{
-					file: "jquery-3.1.1.min.js"
-				},
-				function() {
-					if (chrome.runtime.lastError) return;
-					chrome.scripting.executeScript(
-						{
-							file: "scripts/domSelector.js"
-						},
-						function() {
-							if (chrome.runtime.lastError) return;
-							chrome.scripting.executeScript(
-								{
-									code: "var delay = " + delay + ";"
-								},
-								function() {
-									if (chrome.runtime.lastError) return;
-									chrome.scripting.executeScript(
-										{
-											file: "plugins/autoClick.js"
-										},
-										function() {
-											if (chrome.runtime.lastError) return;
-											window.close();
-										}
-									);
-								}
-							);
-						}
-					);
+					files: ["jquery-3.1.1.min.js"],
+					target: { tabId: currentTab.id }
 				}
 			);
+			if (chrome.runtime.lastError) return;
+
+			chrome.scripting.executeScript(
+				{
+					files: ["scripts/domSelector.js"],
+					target: { tabId: currentTab.id }
+				}
+			);
+			if (chrome.runtime.lastError) return;
+
+			//chrome.runtime.sendMessage({ setAutoClickDelay : delay });
+			// chrome.scripting.executeScript(
+			// 	{
+			// 		func: (delay) => { "delay = " + delay + "; console.log(delay);" },
+			// 		target: { tabId: currentTab.id }
+			// 	}
+			// );
+			if (chrome.runtime.lastError) return;
+
+			chrome.scripting.executeScript(
+				{
+					files: ["plugins/autoClick.js"],
+					target: { tabId: currentTab.id }
+				}
+			);
+			if (chrome.runtime.lastError) return;
+			window.close();
+
 			$("#autoClickStart").text("Stop");
-			background.plugins["autoClick"].delay = delay;
+			//chrome.runtime.sendMessage({ setAutoClickDelay : delay });
 			chrome.storage.sync.set({ autoClickDelay: delay }, function() {
 				if (chrome.runtime.lastError) return;
 			});
 		} else {
-			chrome.scripting.executeScript(
-				{
-					code: "clicking = false; if (domSelector){ domSelector.stop(); }"
-				},
-				function() {
-					if (chrome.runtime.lastError) return;
-				}
-			);
+			//chrome.runtime.sendMessage({ stopClicking : true });
+			chrome.storage.sync.set({ autoClickActive: false });
+			// chrome.scripting.executeScript(
+			// 	{
+			// 		func: () => { "clicking = false; if (domSelector){ domSelector.stop(); }" },
+			// 		target: { tabId: currentTab.id }
+			// 	}
+			// );
+			if (chrome.runtime.lastError) return;
 			$("#autoClickStart").text("Select Click Target");
 		}
 	});
 
-	$("#autoClickDelay").change(function(val) {
+	$("#autoClickDelay").change(async function(val) {
 		var delay = 10;
 		if (!isNaN(parseFloat($("#autoClickDelay").val()))) {
 			delay = parseFloat($("#autoClickDelay").val());
@@ -142,104 +109,9 @@ $(document).ready(function() {
 				delay = 0;
 			}
 		}
-		background.plugins["autoClick"].delay = delay;
+		//await chrome.runtime.sendMessage({ setAutoClickDelay : delay });
+		console.log("Setting delay to", delay);
 		chrome.storage.sync.set({ autoClickDelay: delay }, function() {
-			if (chrome.runtime.lastError) return;
-		});
-	});
-
-	$("#youtubeExtractCaptionsGo").click(function() {
-		chrome.webRequest.onBeforeRequest.addListener(cb, { urls: ["https://www.youtube.com/api/timedtext*"] });
-		var popupTimeout = setTimeout(function() {
-			popupMessage("Loading Closed Captions...<br>Captions might not be available for this video.");
-		}, 200);
-		function failAlert() {
-			popupMessage("YouTube Extract Captions Failed.<br>The captions for this video failed to load.");
-		}
-		var failedTimeout = setTimeout(failAlert, 3000);
-		function cb(details) {
-			clearTimeout(failedTimeout);
-			clearTimeout(popupTimeout);
-			closePopup();
-			chrome.webRequest.onBeforeRequest.removeListener(cb);
-			var xmlhttp = new XMLHttpRequest();
-			xmlhttp.open("GET", details.url, true);
-			xmlhttp.onload = function(e) {
-				if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
-					var text = xmlhttp.responseText
-						.replace(/<\/p>/g, "~")
-						.replace(/(<([^>]+)>)/gi, "")
-						.replace(/&#39;/g, "'")
-						.replace(/\n/g, " ")
-						.replace(/~~/g, "~")
-						.replace(/~~/g, "~")
-						.replace(/~/g, "<br>");
-					chrome.tabs.create({ url: "data:text/html;charset=utf-8," + text }, function() {
-						if (chrome.runtime.lastError) return;
-					});
-				} else failAlert();
-			};
-			xmlhttp.send();
-		}
-		chrome.scripting.executeScript(
-			{
-				file: "plugins/youtubeExtractCaptions.js"
-			},
-			function() {
-				if (chrome.runtime.lastError) return;
-			}
-		);
-	});
-
-	$("#pauseAllTabsGo").click(function() {
-		scripts.pauseAllTabsGo();
-	});
-
-	$("#passwordgeneratorGo").click(function() {
-		if (background.plugins["passwordGenerator"].lastPopupId != -2) {
-			chrome.windows.remove(background.plugins["passwordGenerator"].lastPopupId, function() {
-				if (chrome.runtime.lastError) return;
-			});
-		}
-
-		chrome.windows.create(
-			{
-				url: chrome.runtime.getURL("plugins/passwordgeneratorpopup.html"),
-				type: "popup",
-				width: 400,
-				height: 150,
-				focused: true
-			},
-			function(popup) {
-				if (chrome.runtime.lastError) return;
-				background.plugins["passwordGenerator"].lastPopupId = popup.id;
-			}
-		);
-	});
-
-	$("#updateOk").click(function() {
-		$(".updateInfo").prop("hidden", true);
-		$(".plugin").prop("hidden", false);
-		background.installReason = null;
-		background.newPlugins = 0;
-		chrome.storage.sync.set({ pluginCount: Object.keys(background.plugins).length }, function() {
-			if (chrome.runtime.lastError) return;
-		});
-		chrome.storage.sync.set({ updateNotification: false }, function() {
-			if (chrome.runtime.lastError) return;
-		});
-		chrome.browserAction.setBadgeText({ text: "" });
-		loadDefaults();
-	});
-
-	$("#ratingLink").click(function() {
-		chrome.tabs.create({ url: "https://chrome.google.com/webstore/detail/ctg-plugins/hjljaklopfcidbbglpbehlgmelokabcp/reviews" }, function() {
-			if (chrome.runtime.lastError) return;
-		});
-	});
-
-	$("#websiteLink").click(function() {
-		chrome.tabs.create({ url: "https://creativetechguy.com" }, function() {
 			if (chrome.runtime.lastError) return;
 		});
 	});
@@ -252,102 +124,40 @@ $(document).ready(function() {
 			});
 	});
 
-	function loadDefaults() {
-		if (getCurrentTab().url.indexOf("youtube.com/watch") == -1) {
-			if (background.settings.hideUnavailable) $(".youtubeExtractCaptions").prop("hidden", true);
-			else $("#youtubeExtractCaptionsGo").prop("disabled", true);
-		}
+	async function loadDefaults() {
+		console.log("Loading defaults");
 
-		$("#autoScrollSpeed").val(background.plugins["autoScroll"].speed);
-		if (!background.plugins["autoScroll"].enabled) $(".autoScroll").prop("hidden", true);
-		else {
-			chrome.tabs.sendMessage(getCurrentTab().id, { q: "scrolling" }, function(scrolling) {
-				if (chrome.runtime.lastError) return;
-				if (scrolling) $("#autoScrollStart").text("Stop");
-			});
-		}
-
-		if (!background.plugins["focus"].enabled) $(".focus").prop("hidden", true);
-		else {
-			chrome.tabs.sendMessage(getCurrentTab().id, { q: "focusing" }, function(focusing) {
-				if (chrome.runtime.lastError) return;
-				if (focusing) $("#focusGo").text("Remove Focus");
-			});
-		}
-
-		if (!background.plugins["autoClick"].enabled) $(".autoClick").prop("hidden", true);
-		else {
-			chrome.tabs.sendMessage(getCurrentTab().id, { q: "clicking" }, function(clicking) {
-				if (chrome.runtime.lastError) return;
-				if (clicking) $("#autoClickStart").text("Stop");
-			});
-		}
-		$("#autoClickDelay").val(background.plugins["autoClick"].delay);
-		if (!background.plugins["youtubeExtractCaptions"].enabled) $(".youtubeExtractCaptions").prop("hidden", true);
-		if (!background.plugins["pauseAllTabs"].enabled) $(".pauseAllTabs").prop("hidden", true);
-		if (!background.plugins["passwordGenerator"].enabled) $(".passwordGenerator").prop("hidden", true);
-
-		if (!background.enabled) {
-			if (background.settings.hideUnavailable) {
-				$(".autoScroll").prop("hidden", true);
-				$(".autoClick").prop("hidden", true);
-				$(".focus").prop("hidden", true);
-			} else {
-				$("#autoScrollStart").prop("disabled", true);
-				$("#autoClickStart").prop("disabled", true);
-				$("#focusGo").prop("disabled", true);
-			}
-		}
-
-		if (background.installReason == "update") {
-			if (background.newPlugins > 0 || background.customUpdateMessage.length > 0) {
-				$("#updateMessageDiv").prop("hidden", false);
-				if (background.customUpdateMessage.length > 0) {
-					$("#updateMessage").html(background.customUpdateMessage);
-				} else {
-					if (background.newPlugins > 1) $("#updateMessage").html("New Plugins Added!");
-					else $("#updateMessage").html("New Plugin Added!");
+		//currentTab = chrome.runtime.sendMessage({ getCurrentTab : true });
+		//console.log("Got tab: ", currentTab);
+		
+		chrome.storage.sync.get( "autoClickActive", function(data) {
+			if(isDefined(data["autoClickActive"])) {
+				if (data["autoClickActive"]) {
+					$("#autoClickStart").text("Stop");
 				}
 			}
-			$(".updateInfo").prop("hidden", false);
-			$(".plugin").prop("hidden", true);
-		} else {
-			var plugins = $(".plugin");
-			var allHidden = true;
-			for (var i = 0; i < plugins.length; i++) {
-				if (!plugins.eq(i).prop("hidden")) {
-					allHidden = false;
-					break;
-				}
-			}
-			if (allHidden) {
-				$("#optionsPage").html("Enable Plugins");
-			}
-		}
-	}
+		});
 
-	function popupMessage(text) {
-		chrome.scripting.executeScript(
-			{
-				code: "var text = '" + text + "';"
-			},
-			function() {
-				if (chrome.runtime.lastError) return;
-				chrome.scripting.executeScript({ file: "scripts/dialogBox.js" }, function() {
-					if (chrome.runtime.lastError) return;
-				});
-			}
-		);
-	}
+		// chrome.tabs.sendMessage(currentTab.id, { isClicking: true },
+		// 	function(response) {
+		// 		console.log("clicking response:", response);
+		// 		if (chrome.runtime.lastError) 
+		// 			return;
+		// 		if (response) 
+		// 			$("#autoClickStart").text("Stop");
+		// 	}
+		// );
 
-	function closePopup() {
-		chrome.scripting.executeScript(
-			{
-				code: "if(document.getElementById('ctgDialogPopup')){document.body.removeChild(document.getElementById('ctgDialogPopup'));}"
-			},
-			function() {
-				if (chrome.runtime.lastError) return;
+		//var autoClickSettings = chrome.runtime.sendMessage({ getPluginInfo : {name: "autoClick"}});
+		//console.log("Got plugin info: ", autoClickSettings);
+		await chrome.storage.sync.get( "autoClickDelay", function(data) {
+			if (chrome.runtime.lastError) return;
+			if(isDefined(data["autoClickDelay"])) {
+				delay = data["autoClickDelay"];
+				$("#autoClickDelay").val(data["autoClickDelay"]);
+				console.log("Got delay", data["autoClickDelay"]);
 			}
-		);
+		});
+		//$("#autoClickDelay").val(delay);
 	}
 });

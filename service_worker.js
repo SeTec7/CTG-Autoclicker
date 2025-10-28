@@ -3,7 +3,7 @@
 importScripts('util.js')
 
 var session = {
-	//currentTab: {},
+	currentTab: {},
 	installReason: null,
 	platformInfo: {},
 	plugins: {},
@@ -22,7 +22,7 @@ var scripts = {
 	setRevealPassword: setRevealPassword
 };
 loadSession();
-//loadCurrentTab();
+loadCurrentTab();
 chrome.tabs.onUpdated.addListener(onUpdateTab);
 chrome.tabs.onRemoved.addListener(onRemoveTab);
 chrome.tabs.onActivated.addListener(onActivatedTab);
@@ -74,61 +74,53 @@ chrome.runtime.onInstalled.addListener(function(object) {
 	}
 });
 
-// function loadCurrentTab() {
-// 	chrome.tabs.query({ active: true, currentWindow: true }, function(results) {
-// 		if (results.length > 0) {
-// 			session.currentTab = results[0];
-// 			chrome.scripting.executeScript({ 
-// 				target: { tabId: session.currentTab.id },
-// 				func: () => {
-// 					if (chrome.runtime.lastError) {
-// 						session.enabled = false;
-// 					} else {
-// 						session.enabled = true;
-// 					}
-// 				},
-// 			});
-// 		}
-// 	});
-// }
-
-function onUpdateTab(tabId, changeInfo, tab) {
-	chrome.scripting.executeScript({
-		target: { tabId: tabId, allFrames: true },
-		files: ["scripts/shortcutListener.js"],
-		// func: () => {
-		// 	if (chrome.runtime.lastError) {
-		// 		return;
-		// 	}
-		// }
+function loadCurrentTab() {
+	chrome.tabs.query({ active: true, currentWindow: true }, function(results) {
+		if (results.length > 0) {
+			session.currentTab = results[0];
+			// chrome.scripting.executeScript({ 
+			// 	target: { tabId: session.currentTab.id },
+			// 	func: () => {
+			// 		if (chrome.runtime.lastError) {
+			// 			session.enabled = false;
+			// 		} else {
+			// 			session.enabled = true;
+			// 		}
+			// 	},
+			// });
+		}
 	});
 }
 
+function onUpdateTab(tabId, changeInfo, tab) {
+	loadCurrentTab()
+}
+
 function onRemoveTab(tabId, removeInfo) {
-	//loadCurrentTab();
+	loadCurrentTab();
 }
 
 function onActivatedTab(activeInfo) {
-	//loadCurrentTab();
+	loadCurrentTab();
 }
 
 function onWindowFocus(windowId) {
-	//loadCurrentTab();
+	loadCurrentTab();
 }
 
 function onMessageReceived(message, sender, sendResponse) {
-	if (isDefined(message.autoScrollHeight)) {
-		autoScrollHandler(message.autoScrollHeight, sender);
-	} else if (isDefined(message.keyboardShortcut)) {
-		keyboardShortcutHandler(message.keyboardShortcut);
+	if (isDefined(message.getCurrentTab)) {
+		sendResponse(session.currentTab);
 	} else if (isDefined(message.getPluginInfo)) {
-		sendResponse(session.plugins);
-	} else if (isDefined(message.getHideUnavailableSetting)) {
-		sendResponse(session.settings.hideUnavailable);
-	} else if (isDefined(message.getInstallReason)) {
-		sendResponse(session.installReason);
-	} else if (isDefined(message.setInstallReason)) {
-		session.installReason = message.setInstallReason;
+		if(isDefined(message.getPluginInfo.name)) {
+			console.log("Sending plugin info for", message.getPluginInfo.name)
+			sendResponse(session.plugins[message.getPluginInfo.name]);
+		} else {
+			console.log("Sending all plugin info");
+			sendResponse(session.plugins);
+		}		
+	} else if (isDefined(message.setAutoClickDelay)) {
+		session.plugins["autoClick"].delay = message.setAutoClickDelay;
 	}
 	return true;
 }
