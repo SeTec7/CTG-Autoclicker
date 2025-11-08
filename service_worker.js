@@ -56,8 +56,8 @@ chrome.runtime.onInstalled.addListener(function(object) {
 			syncLoad("lastUpdate", function(val) {
 				if (val == null || Date.now() - val > 302400000 || session.newPlugins || session.customUpdateMessage.length > 0) {
 					session.installReason = "update";
-					chrome.browserAction.setBadgeText({ text: "NEW" });
-					chrome.browserAction.setBadgeBackgroundColor({ color: "#0000FF" });
+					//chrome.browserAction.setBadgeText({ text: "NEW" });
+					//chrome.browserAction.setBadgeBackgroundColor({ color: "#0000FF" });
 					chrome.storage.sync.set({ updateNotification: true }, function() {
 						if (chrome.runtime.lastError) {
 							return;
@@ -113,19 +113,28 @@ function onMessageReceived(message, sender, sendResponse) {
 		sendResponse(session.currentTab);
 	} else if (isDefined(message.getPluginInfo)) {
 		if(isDefined(message.getPluginInfo.name)) {
-			console.log("Sending plugin info for", message.getPluginInfo.name)
+			//console.log("Sending plugin info for", message.getPluginInfo.name)
 			sendResponse(session.plugins[message.getPluginInfo.name]);
 		} else {
-			console.log("Sending all plugin info");
+			//console.log("Sending all plugin info");
 			sendResponse(session.plugins);
 		}		
-	} else if (isDefined(message.setAutoClickDelay)) {
-		session.plugins["autoClick"].delay = message.setAutoClickDelay;
 	}
 	return true;
 }
 
 function loadSession() {
+	chrome.storage.sync.clear();
+	console.log("Cleared all sync storage");
+	chrome.storage.local.get( "autoClickDelay", function(data) {
+		if (!isDefined(data["autoClickDelay"])) {
+			console.log("No autoclick delay set, setting default of 10");
+			chrome.storage.local.set({ autoClickDelay: 10 }, function() {
+				if (chrome.runtime.lastError) return;
+			});
+		}
+	});
+
 	session.plugins = {
 		autoScroll: {
 			enabled: true,
@@ -180,7 +189,7 @@ function loadSession() {
 		}
 	});
 
-	syncLoad("autoClickDelay", function(val) {
+	localLoad("autoClickDelay", function(val) {
 		if (val != null) {
 			session.plugins["autoClick"].delay = val;
 		}
@@ -210,8 +219,8 @@ function loadSession() {
 	syncLoad("updateNotification", function(val) {
 		if (val != null && val) {
 			session.installReason = "update";
-			chrome.browserAction.setBadgeText({ text: "NEW" });
-			chrome.browserAction.setBadgeBackgroundColor({ color: "#0000FF" });
+			//chrome.browserAction.setBadgeText({ text: "NEW" });
+			//chrome.browserAction.setBadgeBackgroundColor({ color: "#0000FF" });
 			syncLoad("pluginCount", function(val) {
 				var pluginCount = Object.keys(session.plugins).length;
 				if (val != null && pluginCount > val) {

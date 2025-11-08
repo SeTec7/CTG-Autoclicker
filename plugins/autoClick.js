@@ -1,6 +1,6 @@
 /* globals chrome, DomOutline, delay */
 
-var clicking = false;
+var isClicking = false;
 var delay;
 var clickingLoop;
 var domSelector = DomOutline({ onClick: elementClicked, realtime: true });
@@ -14,57 +14,43 @@ function isDefined(obj) {
 	return false;
 }
 
-async function elementClicked(e) {
+function elementClicked(e) {
 	domSelector.stop();
 	if (clickingLoop) {
 		clearInterval(clickingLoop);
 	}
-	//clicking = true;
-	chrome.storage.sync.set({ autoClickActive: true });
-	await chrome.storage.sync.get( "autoClickDelay", function(data) {
-		if (chrome.runtime.lastError) return;
-		if(isDefined(data["autoClickDelay"])) {
-			clickingLoop = setInterval(function() {
+	isClicking = true;
+	chrome.storage.local.get( "autoClickDelay", function(data) {
+		delay = data["autoClickDelay"];
+		clickingLoop = setInterval(function() {
+			if (!isClicking) {
+				clearInterval(clickingLoop);
+				return;
+			}
 			if (e) {
 				e.click();
 			} else {
-				chrome.storage.sync.set({ autoClickActive: false });
-				if (domSelector) domSelector.stop();
-				//clicking = false;
+				isClicking = false;
+				clearInterval(clickingLoop);
+				return;
 			}
-			chrome.storage.sync.get( "autoClickActive", function(data) {
-				if(isDefined(data["autoClickActive"])) {
-					if (!data["autoClickActive"]) {
-						clearInterval(clickingLoop);
-						if (domSelector) domSelector.stop();
-					}
-				}
-			});
-			// if (!clicking) {
-			// 	clearInterval(clickingLoop);
-			// }
-			}, data["autoClickDelay"]);
-		}
+		}, delay);
 	});
-
-
 }
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 	if (isDefined(message.isClicking)) {
-		console.log("received is clicking request");
-		sendResponse(clicking);
-		if (!clicking) {
+		//console.log("received is clicking request:", isClicking);
+		sendResponse(isClicking);
+		if (!isClicking) {
 			domSelector.stop();
 		}
-	} else if (isDefined(message.setAutoClickDelay)) {
-		console.log("autoclicker caught delay update");
-		delay = message.setAutoClickDelay;
 	} else if (isDefined(message.stopClicking)) {
-		console.group("stopping clicking");
-		clicking = false; 
+		//console.log("stopping clicking");
+		isClicking = false; 
 		if (domSelector) { 
 			domSelector.stop(); 
 		}
 	}
+	return true;
 });
