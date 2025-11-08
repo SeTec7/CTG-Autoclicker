@@ -1,0 +1,4 @@
+node_modules/
+eslint.config.mts
+package.json
+package-lock.json
