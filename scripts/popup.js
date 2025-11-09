@@ -1,12 +1,12 @@
-/* globals chrome, $ */
+/* globals */
 
 var currentTab = {};
 
-$(document).ready(function() {
+$(function() {
 
 	loadDefaults();
 
-	$("#autoClickStart").click(function() {
+	$("#autoClickStart").on("click", function() {
 		//console.log("Caught autoclicker click ", currentTab);
 		if ($(this).text() == "Select Click Target") {
 			var delay = 10;
@@ -27,7 +27,7 @@ $(document).ready(function() {
 
 			chrome.scripting.executeScript(
 				{
-					files: ["jquery-3.7.1.min.js"],
+					files: ["lib/jquery-3.7.1.min.js"],
 					target: { tabId: currentTab.id }
 				}
 			);
@@ -43,7 +43,7 @@ $(document).ready(function() {
 
 			chrome.scripting.executeScript(
 				{
-					files: ["plugins/autoClick.js"],
+					files: ["scripts/autoClick.js"],
 					target: { tabId: currentTab.id }
 				}
 			);
@@ -58,7 +58,7 @@ $(document).ready(function() {
 		}
 	});
 
-	$("#autoClickDelay").change(async function(val) {
+	$("#autoClickDelay").on("change", async function() {
 		var delay = 10;
 		if (!isNaN(parseFloat($("#autoClickDelay").val()))) {
 			delay = parseFloat($("#autoClickDelay").val());
@@ -70,14 +70,6 @@ $(document).ready(function() {
 		chrome.storage.local.set({ autoClickDelay: delay }, function() {
 			if (chrome.runtime.lastError) return;
 		});
-	});
-
-	$("#optionsPage").click(function() {
-		if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
-		else
-			window.open(chrome.runtime.getURL("options.html"), function() {
-				if (chrome.runtime.lastError) return;
-			});
 	});
 
 	async function loadDefaults() {
@@ -99,7 +91,6 @@ $(document).ready(function() {
 		await chrome.storage.local.get( "autoClickDelay", function(data) {
 			if (chrome.runtime.lastError) return;
 			if(isDefined(data["autoClickDelay"])) {
-				delay = data["autoClickDelay"];
 				$("#autoClickDelay").val(data["autoClickDelay"]);
 				//console.log("Setting delay", data["autoClickDelay"]);
 			}

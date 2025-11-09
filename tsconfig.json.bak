@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"outDir": "./scripts",
+		"allowJs": true,
+		"target": "es6"
+	},
+	"include": ["./src/**/*"],
+	"exclude": [],
+	"types": [
+		"chrome"
+	]
+}

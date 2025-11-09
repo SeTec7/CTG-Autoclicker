@@ -1,4 +1,4 @@
-/* globals chrome */
+/* globals */
 
 importScripts('util.js')
 
