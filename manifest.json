@@ -3,7 +3,7 @@
   "manifest_version": 3,
   "name": "CTG Autoclicker",
   "short_name": "CTGA",
-  "author": "Jared Gillis",
+  "author": "SeTec7",
   "description": "A smart, robust autoclicker for automating browser games.",
   "version": "1.0",
   "icons": {
