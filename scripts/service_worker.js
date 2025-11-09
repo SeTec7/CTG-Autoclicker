@@ -1,7 +1,5 @@
 /* globals */
 
-importScripts('util.js')
-
 // Service worker currently only serves as source of truth for the current tab and global initialization
 
 var session = {
@@ -52,3 +50,9 @@ function onMessageReceived(message, sender, sendResponse) {
 }
 chrome.runtime.onMessage.addListener(onMessageReceived);
 
+function isDefined(obj) {
+	if (typeof obj !== "undefined") {
+		return true;
+	}
+	return false;
+}

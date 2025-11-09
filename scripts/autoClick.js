@@ -6,13 +6,6 @@ var domSelector = DomOutline({ onClick: elementClicked, realtime: true });
 
 domSelector.start();
 
-function isDefined(obj) {
-	if (typeof obj !== "undefined") {
-		return true;
-	}
-	return false;
-}
-
 function elementClicked(e) {
 	domSelector.stop();
 	if (clickingLoop) {
@@ -53,3 +46,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 	}
 	return true;
 });
+
+function isDefined(obj) {
+	if (typeof obj !== "undefined") {
+		return true;
+	}
+	return false;
+}

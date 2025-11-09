@@ -97,3 +97,10 @@ $(function() {
 		});
 	}
 });
+
+function isDefined(obj) {
+	if (typeof obj !== "undefined") {
+		return true;
+	}
+	return false;
+}
