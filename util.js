@@ -8,7 +8,3 @@ function isDefined(obj) {
 	}
 	return false;
 }
-
-function nwc(x) {
-	return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}

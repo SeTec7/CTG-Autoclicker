@@ -1,7 +1,6 @@
-/* globals chrome, DomOutline, delay */
+/* globals DomOutline */
 
 var isClicking = false;
-var delay;
 var clickingLoop;
 var domSelector = DomOutline({ onClick: elementClicked, realtime: true });
 
@@ -21,7 +20,7 @@ function elementClicked(e) {
 	}
 	isClicking = true;
 	chrome.storage.local.get( "autoClickDelay", function(data) {
-		delay = data["autoClickDelay"];
+		var delay = data["autoClickDelay"];
 		clickingLoop = setInterval(function() {
 			if (!isClicking) {
 				clearInterval(clickingLoop);
