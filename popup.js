@@ -27,7 +27,7 @@ $(document).ready(function() {
 
 			chrome.scripting.executeScript(
 				{
-					files: ["jquery-3.1.1.min.js"],
+					files: ["jquery-3.7.1.min.js"],
 					target: { tabId: currentTab.id }
 				}
 			);
